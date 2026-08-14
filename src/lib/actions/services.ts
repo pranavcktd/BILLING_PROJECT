@@ -33,6 +33,7 @@ export async function createService(formData: FormData) {
   }
 
   await prisma.serviceItem.create({
+    // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
     data: {
       name: parsed.name,
       description: parsed.description || null,
@@ -109,6 +110,7 @@ export async function bulkImportServices(formData: FormData): Promise<BulkImport
     }
     try {
       await prisma.serviceItem.create({
+        // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
         data: {
           name,
           description: r.description?.trim() || null,

@@ -48,6 +48,7 @@ export async function createQuotation(formData: FormData) {
   const number = await nextQuotationNumber();
 
   const quotation = await prisma.quotation.create({
+    // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
     data: {
       number,
       clientId: meta.clientId,
@@ -163,6 +164,7 @@ export async function convertQuotationToContract(quotationId: string) {
   });
 
   const contract = await prisma.contract.create({
+    // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
     data: {
       clientId: quotation.clientId,
       matterId: quotation.matterId,

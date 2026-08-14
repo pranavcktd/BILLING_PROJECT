@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdvocate } from "@/lib/auth-guard";
+import { getCurrentOrgId } from "@/lib/tenant-context";
 
 const firmProfileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -46,7 +47,7 @@ export async function updateFirmProfile(formData: FormData) {
   }
 
   await prisma.firmProfile.upsert({
-    where: { id: "singleton" },
+    where: { organizationId: await getCurrentOrgId() },
     update: {
       name: parsed.name,
       address: parsed.address || null,
@@ -56,8 +57,8 @@ export async function updateFirmProfile(formData: FormData) {
       gstin: parsed.gstin || null,
       ...(signatureImage !== undefined ? { signatureImage } : {}),
     },
+    // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
     create: {
-      id: "singleton",
       name: parsed.name,
       address: parsed.address || null,
       phone: parsed.phone || null,
@@ -91,10 +92,13 @@ export async function updateEmailSettings(formData: FormData) {
     fromEmail: formData.get("fromEmail") || "",
   });
 
-  const existing = await prisma.emailSettings.findUnique({ where: { id: "singleton" } });
+  const organizationId = await getCurrentOrgId();
+  const existing = await prisma.emailSettings.findUnique({
+    where: { organizationId },
+  });
 
   await prisma.emailSettings.upsert({
-    where: { id: "singleton" },
+    where: { organizationId },
     update: {
       smtpHost: parsed.smtpHost || null,
       smtpPort: parsed.smtpPort ?? null,
@@ -104,8 +108,8 @@ export async function updateEmailSettings(formData: FormData) {
       fromName: parsed.fromName || null,
       fromEmail: parsed.fromEmail || null,
     },
+    // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
     create: {
-      id: "singleton",
       smtpHost: parsed.smtpHost || null,
       smtpPort: parsed.smtpPort ?? null,
       smtpUser: parsed.smtpUser || null,
@@ -149,6 +153,7 @@ export async function createBankAccount(formData: FormData) {
   }
 
   await prisma.bankAccount.create({
+    // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
     data: {
       bankName: parsed.bankName,
       accountName: parsed.accountName,

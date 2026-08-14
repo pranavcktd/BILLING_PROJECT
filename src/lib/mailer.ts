@@ -1,8 +1,11 @@
 import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
+import { getCurrentOrgId } from "@/lib/tenant-context";
 
 export async function getMailer() {
-  const settings = await prisma.emailSettings.findUnique({ where: { id: "singleton" } });
+  const settings = await prisma.emailSettings.findUnique({
+    where: { organizationId: await getCurrentOrgId() },
+  });
 
   if (!settings?.smtpHost || !settings.smtpPort || !settings.smtpUser || !settings.smtpPass) {
     return null;

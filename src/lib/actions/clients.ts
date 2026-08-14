@@ -34,6 +34,7 @@ export async function createClient(formData: FormData) {
   const parsed = readClientForm(formData);
 
   const client = await prisma.client.create({
+    // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
     data: {
       name: parsed.name,
       email: parsed.email || null,
@@ -113,6 +114,7 @@ export async function bulkImportClients(formData: FormData): Promise<BulkImportR
     }
     try {
       await prisma.client.create({
+        // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
         data: {
           name,
           email,

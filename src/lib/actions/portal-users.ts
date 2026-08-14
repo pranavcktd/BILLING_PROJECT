@@ -4,10 +4,9 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate, requireClient } from "@/lib/auth-guard";
-import { signOut } from "@/auth";
-
-const DEFAULT_CLIENT_PASSWORD = "Client@123";
+import { requireAdvocate } from "@/lib/auth-guard";
+import { auth, signOut } from "@/auth";
+import { DEFAULT_PASSWORD } from "@/lib/default-password";
 
 export async function createPortalUser(clientId: string) {
   await requireAdvocate();
@@ -17,7 +16,7 @@ export async function createPortalUser(clientId: string) {
     throw new Error("Add an email address to this client's profile first.");
   }
 
-  const passwordHash = await bcrypt.hash(DEFAULT_CLIENT_PASSWORD, 12);
+  const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
 
   await prisma.user.create({
     data: {
@@ -26,6 +25,7 @@ export async function createPortalUser(clientId: string) {
       name: client.name,
       role: "CLIENT",
       clientId: client.id,
+      organizationId: client.organizationId,
       mustChangePassword: true,
     },
   });
@@ -35,7 +35,7 @@ export async function createPortalUser(clientId: string) {
 
 export async function resetPortalPassword(userId: string) {
   await requireAdvocate();
-  const passwordHash = await bcrypt.hash(DEFAULT_CLIENT_PASSWORD, 12);
+  const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
 
   const user = await prisma.user.update({
     where: { id: userId },
@@ -59,13 +59,18 @@ const changePasswordSchema = z
   });
 
 export async function changeOwnPassword(formData: FormData) {
-  const session = await requireClient();
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error("You must be signed in.");
+  }
   const parsed = changePasswordSchema.parse({
     currentPassword: formData.get("currentPassword"),
     newPassword: formData.get("newPassword"),
     confirmPassword: formData.get("confirmPassword"),
   });
 
+  // Note: User is outside the tenant-scoping extension, so this lookup by
+  // id needs no org context — safe to call before any guard sets it.
   const user = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
   const valid = await bcrypt.compare(parsed.currentPassword, user.passwordHash);
   if (!valid) {

@@ -25,6 +25,7 @@ export async function createMatter(clientId: string, formData: FormData) {
   const parsed = readMatterForm(formData);
 
   const matter = await prisma.matter.create({
+    // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
     data: {
       clientId,
       title: parsed.title,

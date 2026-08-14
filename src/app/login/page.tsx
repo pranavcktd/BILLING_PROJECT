@@ -21,6 +21,15 @@ async function login(formData: FormData) {
     });
   } catch (error) {
     if (error instanceof AuthError) {
+      // NextAuth wraps whatever `authorize()` throws as a CredentialsSignin
+      // AuthError; the original message (e.g. "subscription inactive") is
+      // preserved on `.cause.err.message` — surface it when present so a
+      // suspended-org login shows a real reason, not a generic one.
+      const cause = error.cause as { err?: Error } | undefined;
+      const message = cause?.err?.message;
+      if (message && message !== "CredentialsSignin") {
+        redirect(`/login?error=${encodeURIComponent(message)}`);
+      }
       redirect("/login?error=invalid");
     }
     throw error;
@@ -34,10 +43,12 @@ async function login(formData: FormData) {
       ? await prisma.user.findUnique({ where: { email: email.toLowerCase() } })
       : null;
 
-  if (user?.role === "CLIENT" && user.mustChangePassword) {
-    redirect("/portal/change-password");
+  if (user?.mustChangePassword) {
+    redirect(user.role === "CLIENT" ? "/portal/change-password" : "/change-password");
   }
-  redirect(user?.role === "CLIENT" ? "/portal" : "/dashboard");
+  if (user?.role === "CLIENT") redirect("/portal");
+  if (user?.role === "SUPER_ADMIN") redirect("/super-admin");
+  redirect("/dashboard");
 }
 
 export default async function LoginPage({
@@ -77,7 +88,7 @@ export default async function LoginPage({
             </div>
             {error && (
               <p className="text-sm text-destructive">
-                Invalid email or password.
+                {error === "invalid" ? "Invalid email or password." : error}
               </p>
             )}
             {passwordChanged && !error && (

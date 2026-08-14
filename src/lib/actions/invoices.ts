@@ -79,6 +79,7 @@ export async function createInvoice(formData: FormData) {
   const number = await nextInvoiceNumber();
 
   const invoice = await prisma.invoice.create({
+    // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
     data: {
       number,
       clientId: meta.clientId,

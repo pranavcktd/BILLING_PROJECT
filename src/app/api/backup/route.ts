@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdvocate } from "@/lib/auth-guard";
+import { getCurrentOrgId } from "@/lib/tenant-context";
 
 export async function GET() {
   await requireAdvocate();
+  const organizationId = await getCurrentOrgId();
 
   const [
     clients,
@@ -25,18 +27,25 @@ export async function GET() {
     prisma.client.findMany(),
     prisma.matter.findMany(),
     prisma.quotation.findMany(),
-    prisma.quotationItem.findMany(),
+    // QuotationItem/InvoiceItem/InvoiceBankAccount carry no organizationId
+    // of their own (never queried standalone elsewhere) — scope via the
+    // parent relation instead.
+    prisma.quotationItem.findMany({ where: { quotation: { organizationId } } }),
     prisma.contract.findMany(),
     prisma.invoice.findMany(),
-    prisma.invoiceItem.findMany(),
-    prisma.invoiceBankAccount.findMany(),
+    prisma.invoiceItem.findMany({ where: { invoice: { organizationId } } }),
+    prisma.invoiceBankAccount.findMany({ where: { invoice: { organizationId } } }),
     prisma.payment.findMany(),
     prisma.bankAccount.findMany(),
     prisma.serviceItem.findMany(),
     prisma.expense.findMany(),
-    prisma.firmProfile.findUnique({ where: { id: "singleton" } }),
+    prisma.firmProfile.findUnique({ where: { organizationId } }),
     prisma.clientNote.findMany(),
+    // User sits outside the tenant-scoping extension by design (Super Admin
+    // needs unscoped access) — this query must filter explicitly or it
+    // would return every organization's user roster.
     prisma.user.findMany({
+      where: { organizationId },
       select: {
         id: true,
         email: true,

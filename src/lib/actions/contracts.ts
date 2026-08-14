@@ -29,6 +29,7 @@ export async function createContract(formData: FormData) {
   const meta = readMeta(formData);
 
   const contract = await prisma.contract.create({
+    // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
     data: {
       clientId: meta.clientId,
       matterId: meta.matterId || null,

@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RowActionsMenu, type RowAction } from "@/components/row-actions-menu";
+import { getCurrentOrgId } from "@/lib/tenant-context";
 
 export default async function SettingsPage({
   searchParams,
@@ -25,10 +26,11 @@ export default async function SettingsPage({
   await requireAdvocate();
   const { error } = await searchParams;
 
+  const organizationId = await getCurrentOrgId();
   const [firmProfile, bankAccounts, emailSettings] = await Promise.all([
-    prisma.firmProfile.findUnique({ where: { id: "singleton" } }),
+    prisma.firmProfile.findUnique({ where: { organizationId } }),
     prisma.bankAccount.findMany({ orderBy: { createdAt: "asc" } }),
-    prisma.emailSettings.findUnique({ where: { id: "singleton" } }),
+    prisma.emailSettings.findUnique({ where: { organizationId } }),
   ]);
 
   return (

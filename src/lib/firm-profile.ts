@@ -1,10 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { getCurrentOrgId } from "@/lib/tenant-context";
 
 export async function getFirmProfile() {
-  const profile = await prisma.firmProfile.findUnique({ where: { id: "singleton" } });
+  const profile = await prisma.firmProfile.findUnique({
+    where: { organizationId: await getCurrentOrgId() },
+  });
   return (
     profile ?? {
-      id: "singleton",
+      id: "",
       name: "",
       address: null,
       phone: null,

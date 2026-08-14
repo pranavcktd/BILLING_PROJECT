@@ -35,6 +35,7 @@ export async function createExpense(formData: FormData) {
   }
 
   await prisma.expense.create({
+    // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
     data: {
       date: new Date(parsed.date),
       category: parsed.category,

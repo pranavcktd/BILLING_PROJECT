@@ -21,6 +21,7 @@ export const authConfig = {
       if (user) {
         token.role = user.role;
         token.clientId = user.clientId ?? null;
+        token.organizationId = user.organizationId ?? null;
         token.mustChangePassword = user.mustChangePassword ?? false;
       }
       return token;
@@ -28,8 +29,9 @@ export const authConfig = {
     session: async ({ session, token }) => {
       if (session.user) {
         session.user.id = token.sub as string;
-        session.user.role = token.role as "ADVOCATE" | "CLIENT";
+        session.user.role = token.role as "ADVOCATE" | "CLIENT" | "SUPER_ADMIN";
         session.user.clientId = (token.clientId as string | null) ?? null;
+        session.user.organizationId = (token.organizationId as string | null) ?? null;
         session.user.mustChangePassword = (token.mustChangePassword as boolean) ?? false;
       }
       return session;

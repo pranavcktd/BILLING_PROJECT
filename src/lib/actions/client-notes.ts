@@ -29,6 +29,7 @@ export async function createClientNote(clientId: string, formData: FormData) {
   const parsed = readClientNoteForm(formData);
 
   await prisma.clientNote.create({
+    // @ts-expect-error organizationId is injected by the tenant-scoping Prisma extension (src/lib/prisma.ts)
     data: {
       clientId,
       type: parsed.type,
