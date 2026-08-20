@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdvocate, requireModulePermission } from "@/lib/auth-guard";
 import { getCurrentOrgId } from "@/lib/tenant-context";
-import { getMailer } from "@/lib/mailer";
+import { getMailer, buildMailer, sendTestEmail } from "@/lib/mailer";
 import { parseBackupFile, performOrgRestore } from "@/lib/restore";
 
 const firmProfileSchema = z.object({
@@ -74,18 +74,22 @@ export async function updateFirmProfile(formData: FormData) {
   revalidatePath("/settings");
 }
 
-const emailSettingsSchema = z.object({
-  smtpHost: z.string().optional(),
-  smtpPort: z.coerce.number().optional(),
-  smtpUser: z.string().optional(),
-  smtpPass: z.string().optional(),
-  fromName: z.string().optional(),
-  fromEmail: z.string().optional(),
-});
+const emailSettingsSchema = z
+  .object({
+    smtpHost: z.string().optional(),
+    smtpPort: z.coerce.number().optional(),
+    smtpUser: z.string().optional(),
+    smtpPass: z.string().optional(),
+    fromName: z.string().optional(),
+    fromEmail: z.string().optional(),
+  })
+  .refine((data) => !data.smtpHost || (data.smtpPort && data.smtpUser), {
+    message: "SMTP Port and Username are required when a host is set.",
+    path: ["smtpPort"],
+  });
 
-export async function updateEmailSettings(formData: FormData) {
-  await requireModulePermission("settings", "MANAGE");
-  const parsed = emailSettingsSchema.parse({
+function readEmailSettingsForm(formData: FormData) {
+  const result = emailSettingsSchema.safeParse({
     smtpHost: formData.get("smtpHost") || "",
     smtpPort: formData.get("smtpPort") || undefined,
     smtpUser: formData.get("smtpUser") || "",
@@ -93,6 +97,15 @@ export async function updateEmailSettings(formData: FormData) {
     fromName: formData.get("fromName") || "",
     fromEmail: formData.get("fromEmail") || "",
   });
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Invalid email settings.");
+  }
+  return result.data;
+}
+
+export async function updateEmailSettings(formData: FormData) {
+  await requireModulePermission("settings", "MANAGE");
+  const parsed = readEmailSettingsForm(formData);
 
   const organizationId = await getCurrentOrgId();
   const existing = await prisma.emailSettings.findUnique({
@@ -122,6 +135,34 @@ export async function updateEmailSettings(formData: FormData) {
   });
 
   revalidatePath("/settings");
+}
+
+export async function testEmailSettings(formData: FormData) {
+  const session = await requireModulePermission("settings", "MANAGE");
+  const parsed = readEmailSettingsForm(formData);
+  const testRecipient = String(formData.get("testRecipient") || "").trim() || session.user.email!;
+
+  const organizationId = await getCurrentOrgId();
+  const existing = await prisma.emailSettings.findUnique({ where: { organizationId } });
+
+  // Test whatever is currently typed into the form, not necessarily what's
+  // saved yet — falls back to the already-saved password if the field was
+  // left blank, same as a real save would.
+  const mailer = buildMailer({
+    smtpHost: parsed.smtpHost || null,
+    smtpPort: parsed.smtpPort ?? null,
+    smtpUser: parsed.smtpUser || null,
+    smtpPass: parsed.smtpPass || existing?.smtpPass || null,
+    fromName: parsed.fromName || null,
+    fromEmail: parsed.fromEmail || null,
+  });
+
+  if (!mailer) {
+    throw new Error("Fill in SMTP Host, Port, Username, and Password before testing.");
+  }
+
+  await sendTestEmail(mailer, testRecipient);
+  return testRecipient;
 }
 
 const bankAccountSchema = z.object({

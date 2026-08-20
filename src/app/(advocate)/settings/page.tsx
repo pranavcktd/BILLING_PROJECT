@@ -5,6 +5,7 @@ import {
   setDefaultBankAccount,
   deleteBankAccount,
   updateEmailSettings,
+  testEmailSettings,
   restoreOrganizationData,
 } from "@/lib/actions/settings";
 import { SettingsProfileForm } from "@/components/settings-profile-form";
@@ -81,6 +82,7 @@ export default async function SettingsPage({
         <CardContent>
           <EmailSettingsForm
             action={updateEmailSettings}
+            testAction={testEmailSettings}
             settings={{
               smtpHost: emailSettings?.smtpHost ?? null,
               smtpPort: emailSettings?.smtpPort ?? null,

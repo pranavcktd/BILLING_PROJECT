@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/auth-guard";
 import { DEFAULT_PASSWORD } from "@/lib/default-password";
-import { getSystemMailer } from "@/lib/mailer";
+import { getSystemMailer, buildMailer, sendTestEmail } from "@/lib/mailer";
 import { parseBackupFile, performOrgRestore } from "@/lib/restore";
 
 const onboardSchema = z.object({
@@ -176,18 +176,22 @@ export async function restoreOrganizationDataAsSuperAdmin(organizationId: string
   revalidatePath(`/super-admin/organizations/${organizationId}`);
 }
 
-const systemEmailSettingsSchema = z.object({
-  smtpHost: z.string().optional(),
-  smtpPort: z.coerce.number().optional(),
-  smtpUser: z.string().optional(),
-  smtpPass: z.string().optional(),
-  fromName: z.string().optional(),
-  fromEmail: z.string().optional(),
-});
+const systemEmailSettingsSchema = z
+  .object({
+    smtpHost: z.string().optional(),
+    smtpPort: z.coerce.number().optional(),
+    smtpUser: z.string().optional(),
+    smtpPass: z.string().optional(),
+    fromName: z.string().optional(),
+    fromEmail: z.string().optional(),
+  })
+  .refine((data) => !data.smtpHost || (data.smtpPort && data.smtpUser), {
+    message: "SMTP Port and Username are required when a host is set.",
+    path: ["smtpPort"],
+  });
 
-export async function updateSystemEmailSettings(formData: FormData) {
-  await requireSuperAdmin();
-  const parsed = systemEmailSettingsSchema.parse({
+function readSystemEmailSettingsForm(formData: FormData) {
+  const result = systemEmailSettingsSchema.safeParse({
     smtpHost: formData.get("smtpHost") || "",
     smtpPort: formData.get("smtpPort") || undefined,
     smtpUser: formData.get("smtpUser") || "",
@@ -195,6 +199,15 @@ export async function updateSystemEmailSettings(formData: FormData) {
     fromName: formData.get("fromName") || "",
     fromEmail: formData.get("fromEmail") || "",
   });
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Invalid email settings.");
+  }
+  return result.data;
+}
+
+export async function updateSystemEmailSettings(formData: FormData) {
+  await requireSuperAdmin();
+  const parsed = readSystemEmailSettingsForm(formData);
 
   const existing = await prisma.systemEmailSettings.findFirst();
   const data = {
@@ -213,4 +226,27 @@ export async function updateSystemEmailSettings(formData: FormData) {
   }
 
   revalidatePath("/super-admin/settings");
+}
+
+export async function testSystemEmailSettings(formData: FormData) {
+  const session = await requireSuperAdmin();
+  const parsed = readSystemEmailSettingsForm(formData);
+  const testRecipient = String(formData.get("testRecipient") || "").trim() || session.user.email!;
+
+  const existing = await prisma.systemEmailSettings.findFirst();
+  const mailer = buildMailer({
+    smtpHost: parsed.smtpHost || null,
+    smtpPort: parsed.smtpPort ?? null,
+    smtpUser: parsed.smtpUser || null,
+    smtpPass: parsed.smtpPass || existing?.smtpPass || null,
+    fromName: parsed.fromName || null,
+    fromEmail: parsed.fromEmail || null,
+  });
+
+  if (!mailer) {
+    throw new Error("Fill in SMTP Host, Port, Username, and Password before testing.");
+  }
+
+  await sendTestEmail(mailer, testRecipient);
+  return testRecipient;
 }

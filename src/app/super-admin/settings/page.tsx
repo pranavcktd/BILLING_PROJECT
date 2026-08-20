@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/auth-guard";
-import { updateSystemEmailSettings } from "@/lib/actions/super-admin";
+import { updateSystemEmailSettings, testSystemEmailSettings } from "@/lib/actions/super-admin";
 import { EmailSettingsForm } from "@/components/email-settings-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -26,6 +26,7 @@ export default async function SuperAdminSettingsPage() {
         <CardContent>
           <EmailSettingsForm
             action={updateSystemEmailSettings}
+            testAction={testSystemEmailSettings}
             description="Enter the outgoing (SMTP) mail server this app uses for system-level emails. For Gmail, use an App Password rather than your normal password."
             settings={{
               smtpHost: settings?.smtpHost ?? null,

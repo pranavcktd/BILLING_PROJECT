@@ -16,14 +16,17 @@ type EmailSettingsValues = {
 };
 
 type SaveState = { ok: boolean; ts: number; error?: string } | null;
+type TestState = { ok: boolean; ts: number; error?: string; sentTo?: string } | null;
 
 export function EmailSettingsForm({
   settings,
   action,
+  testAction,
   description,
 }: {
   settings: EmailSettingsValues;
   action: (formData: FormData) => Promise<void>;
+  testAction?: (formData: FormData) => Promise<string>;
   description?: string;
 }) {
   const saveAction = async (_prev: SaveState, formData: FormData): Promise<SaveState> => {
@@ -36,6 +39,17 @@ export function EmailSettingsForm({
   };
   const [state, formAction, pending] = useActionState<SaveState, FormData>(saveAction, null);
 
+  const runTest = async (_prev: TestState, formData: FormData): Promise<TestState> => {
+    if (!testAction) return null;
+    try {
+      const sentTo = await testAction(formData);
+      return { ok: true, ts: Date.now(), sentTo };
+    } catch (err) {
+      return { ok: false, ts: Date.now(), error: err instanceof Error ? err.message : "Test email failed." };
+    }
+  };
+  const [testState, testFormAction, testPending] = useActionState<TestState, FormData>(runTest, null);
+
   useEffect(() => {
     if (!state) return;
     if (state.ok) {
@@ -44,6 +58,15 @@ export function EmailSettingsForm({
       toast.error(state.error ?? "Failed to save email settings.");
     }
   }, [state]);
+
+  useEffect(() => {
+    if (!testState) return;
+    if (testState.ok) {
+      toast.success(`Test email sent to ${testState.sentTo}. Check the inbox (and spam folder).`);
+    } else {
+      toast.error(testState.error ?? "Test email failed.");
+    }
+  }, [testState]);
 
   return (
     <form action={formAction} className="space-y-4">
@@ -113,9 +136,37 @@ export function EmailSettingsForm({
           />
         </div>
       </div>
+
       <Button type="submit" disabled={pending}>
         {pending ? "Saving..." : "Save Email Settings"}
       </Button>
+
+      {testAction && (
+        <div className="space-y-2 rounded-md border p-3">
+          <Label htmlFor="testRecipient" className="text-xs text-muted-foreground">
+            Send a test email to confirm these settings actually work (uses whatever is
+            currently filled in above, saved or not)
+          </Label>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              id="testRecipient"
+              name="testRecipient"
+              type="email"
+              placeholder="you@example.com (defaults to your own login email)"
+              className="max-w-xs"
+            />
+            <Button
+              type="submit"
+              variant="outline"
+              size="sm"
+              formAction={testFormAction}
+              disabled={testPending}
+            >
+              {testPending ? "Sending..." : "Test SMTP Mail Service"}
+            </Button>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
