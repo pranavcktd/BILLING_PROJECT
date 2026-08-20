@@ -9,6 +9,7 @@ import { requireSuperAdmin } from "@/lib/auth-guard";
 import { DEFAULT_PASSWORD } from "@/lib/default-password";
 import { getSystemMailer, buildMailer, sendTestEmail } from "@/lib/mailer";
 import { parseBackupFile, performOrgRestore } from "@/lib/restore";
+import { logActivity } from "@/lib/audit-log";
 
 const onboardSchema = z.object({
   organizationName: z.string().min(1, "Organization name is required"),
@@ -18,7 +19,7 @@ const onboardSchema = z.object({
 });
 
 export async function onboardOrganization(formData: FormData) {
-  await requireSuperAdmin();
+  const session = await requireSuperAdmin();
   const parsed = onboardSchema.parse({
     organizationName: formData.get("organizationName"),
     profession: formData.get("profession") || "",
@@ -51,16 +52,34 @@ export async function onboardOrganization(formData: FormData) {
     },
   });
 
+  await logActivity({
+    actorId: session.user.id,
+    actorEmail: session.user.email!,
+    action: "Onboarded organization",
+    targetType: "Organization",
+    targetId: organization.id,
+    targetLabel: organization.name,
+    details: `Admin login: ${email}`,
+  });
+
   revalidatePath("/super-admin");
   redirect("/super-admin");
 }
 
 export async function resetAdminPassword(userId: string) {
-  await requireSuperAdmin();
+  const session = await requireSuperAdmin();
   const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
-  await prisma.user.update({
+  const user = await prisma.user.update({
     where: { id: userId },
     data: { passwordHash, mustChangePassword: true },
+  });
+  await logActivity({
+    actorId: session.user.id,
+    actorEmail: session.user.email!,
+    action: "Reset admin password",
+    targetType: "User",
+    targetId: user.id,
+    targetLabel: user.email,
   });
   revalidatePath("/super-admin");
 }
@@ -69,10 +88,18 @@ export async function setOrganizationSubscriptionStatus(
   organizationId: string,
   status: "ACTIVE" | "SUSPENDED"
 ) {
-  await requireSuperAdmin();
-  await prisma.organization.update({
+  const session = await requireSuperAdmin();
+  const org = await prisma.organization.update({
     where: { id: organizationId },
     data: { subscriptionStatus: status },
+  });
+  await logActivity({
+    actorId: session.user.id,
+    actorEmail: session.user.email!,
+    action: status === "SUSPENDED" ? "Suspended organization" : "Reactivated organization",
+    targetType: "Organization",
+    targetId: org.id,
+    targetLabel: org.name,
   });
   revalidatePath("/super-admin");
 }
@@ -85,7 +112,7 @@ const organizationDetailsSchema = z.object({
 });
 
 export async function updateOrganizationDetails(organizationId: string, formData: FormData) {
-  await requireSuperAdmin();
+  const session = await requireSuperAdmin();
   const parsed = organizationDetailsSchema.parse({
     name: formData.get("name"),
     profession: formData.get("profession") || "",
@@ -93,7 +120,7 @@ export async function updateOrganizationDetails(organizationId: string, formData
     subscriptionEndDate: formData.get("subscriptionEndDate") || "",
   });
 
-  await prisma.organization.update({
+  const org = await prisma.organization.update({
     where: { id: organizationId },
     data: {
       name: parsed.name,
@@ -103,6 +130,15 @@ export async function updateOrganizationDetails(organizationId: string, formData
         : null,
       subscriptionEndDate: parsed.subscriptionEndDate ? new Date(parsed.subscriptionEndDate) : null,
     },
+  });
+
+  await logActivity({
+    actorId: session.user.id,
+    actorEmail: session.user.email!,
+    action: "Updated organization details",
+    targetType: "Organization",
+    targetId: org.id,
+    targetLabel: org.name,
   });
 
   revalidatePath("/super-admin");
@@ -115,7 +151,7 @@ const userEditSchema = z.object({
 });
 
 export async function updateAdminUser(userId: string, formData: FormData) {
-  await requireSuperAdmin();
+  const session = await requireSuperAdmin();
   const parsed = userEditSchema.parse({
     name: formData.get("name"),
     email: formData.get("email"),
@@ -133,23 +169,48 @@ export async function updateAdminUser(userId: string, formData: FormData) {
     data: { name: parsed.name, email },
   });
 
+  await logActivity({
+    actorId: session.user.id,
+    actorEmail: session.user.email!,
+    action: "Updated admin login details",
+    targetType: "User",
+    targetId: userId,
+    targetLabel: email,
+  });
+
   revalidatePath("/super-admin");
   if (orgId) revalidatePath(`/super-admin/organizations/${orgId}`);
 }
 
 export async function setUserActive(userId: string, isActive: boolean) {
-  await requireSuperAdmin();
+  const session = await requireSuperAdmin();
   const user = await prisma.user.update({
     where: { id: userId },
     data: { isActive },
+  });
+  await logActivity({
+    actorId: session.user.id,
+    actorEmail: session.user.email!,
+    action: isActive ? "Reactivated user" : "Deactivated user",
+    targetType: "User",
+    targetId: user.id,
+    targetLabel: user.email,
   });
   revalidatePath("/super-admin");
   if (user.organizationId) revalidatePath(`/super-admin/organizations/${user.organizationId}`);
 }
 
 export async function deleteUser(userId: string) {
-  await requireSuperAdmin();
+  const session = await requireSuperAdmin();
   const user = await prisma.user.delete({ where: { id: userId } });
+  await logActivity({
+    actorId: session.user.id,
+    actorEmail: session.user.email!,
+    action: "Deleted user",
+    targetType: "User",
+    targetId: user.id,
+    targetLabel: user.email,
+  });
   revalidatePath("/super-admin");
   if (user.organizationId) revalidatePath(`/super-admin/organizations/${user.organizationId}`);
 }
@@ -171,6 +232,15 @@ export async function restoreOrganizationDataAsSuperAdmin(organizationId: string
   const mailer = await getSystemMailer();
 
   await performOrgRestore(organizationId, backup, mailer, session.user.email!);
+
+  await logActivity({
+    actorId: session.user.id,
+    actorEmail: session.user.email!,
+    action: "Restored organization data from backup",
+    targetType: "Organization",
+    targetId: organizationId,
+    targetLabel: org.name,
+  });
 
   revalidatePath("/super-admin");
   revalidatePath(`/super-admin/organizations/${organizationId}`);
@@ -206,7 +276,7 @@ function readSystemEmailSettingsForm(formData: FormData) {
 }
 
 export async function updateSystemEmailSettings(formData: FormData) {
-  await requireSuperAdmin();
+  const session = await requireSuperAdmin();
   const parsed = readSystemEmailSettingsForm(formData);
 
   const existing = await prisma.systemEmailSettings.findFirst();
@@ -224,6 +294,12 @@ export async function updateSystemEmailSettings(formData: FormData) {
   } else {
     await prisma.systemEmailSettings.create({ data });
   }
+
+  await logActivity({
+    actorId: session.user.id,
+    actorEmail: session.user.email!,
+    action: "Updated system email settings",
+  });
 
   revalidatePath("/super-admin/settings");
 }
@@ -249,4 +325,104 @@ export async function testSystemEmailSettings(formData: FormData) {
 
   await sendTestEmail(mailer, testRecipient);
   return testRecipient;
+}
+
+const inviteSuperAdminSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Enter a valid email address"),
+});
+
+export async function inviteSuperAdmin(formData: FormData) {
+  const session = await requireSuperAdmin();
+  const parsed = inviteSuperAdminSchema.parse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+  });
+
+  const email = parsed.email.toLowerCase();
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    throw new Error(`A login already exists for ${email}.`);
+  }
+
+  const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
+  const newAdmin = await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      name: parsed.name,
+      role: "SUPER_ADMIN",
+      mustChangePassword: true,
+    },
+  });
+
+  await logActivity({
+    actorId: session.user.id,
+    actorEmail: session.user.email!,
+    action: "Invited Super Admin",
+    targetType: "User",
+    targetId: newAdmin.id,
+    targetLabel: newAdmin.email,
+  });
+
+  revalidatePath("/super-admin/team");
+}
+
+async function requireNotLastSuperAdmin(userId: string) {
+  const activeSuperAdminCount = await prisma.user.count({
+    where: { role: "SUPER_ADMIN", isActive: true, id: { not: userId } },
+  });
+  if (activeSuperAdminCount === 0) {
+    throw new Error("Can't remove the last active Super Admin login.");
+  }
+}
+
+export async function resetSuperAdminPassword(userId: string) {
+  const session = await requireSuperAdmin();
+  const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash, mustChangePassword: true },
+  });
+  await logActivity({
+    actorId: session.user.id,
+    actorEmail: session.user.email!,
+    action: "Reset Super Admin password",
+    targetType: "User",
+    targetId: user.id,
+    targetLabel: user.email,
+  });
+  revalidatePath("/super-admin/team");
+}
+
+export async function setSuperAdminActive(userId: string, isActive: boolean) {
+  const session = await requireSuperAdmin();
+  if (!isActive) {
+    await requireNotLastSuperAdmin(userId);
+  }
+  const user = await prisma.user.update({ where: { id: userId }, data: { isActive } });
+  await logActivity({
+    actorId: session.user.id,
+    actorEmail: session.user.email!,
+    action: isActive ? "Reactivated Super Admin" : "Deactivated Super Admin",
+    targetType: "User",
+    targetId: user.id,
+    targetLabel: user.email,
+  });
+  revalidatePath("/super-admin/team");
+}
+
+export async function deleteSuperAdmin(userId: string) {
+  const session = await requireSuperAdmin();
+  await requireNotLastSuperAdmin(userId);
+  const user = await prisma.user.delete({ where: { id: userId } });
+  await logActivity({
+    actorId: session.user.id,
+    actorEmail: session.user.email!,
+    action: "Deleted Super Admin",
+    targetType: "User",
+    targetId: user.id,
+    targetLabel: user.email,
+  });
+  revalidatePath("/super-admin/team");
 }

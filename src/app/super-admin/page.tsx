@@ -35,14 +35,9 @@ export default async function SuperAdminDashboard() {
             Onboard firms and manage their subscription access.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" nativeButton={false} render={<Link href="/super-admin/settings" />}>
-            System Email Settings
-          </Button>
-          <Button nativeButton={false} render={<Link href="/super-admin/organizations/new" />}>
-            Onboard New Admin
-          </Button>
-        </div>
+        <Button nativeButton={false} render={<Link href="/super-admin/organizations/new" />}>
+          Onboard New Admin
+        </Button>
       </div>
 
       <Card>

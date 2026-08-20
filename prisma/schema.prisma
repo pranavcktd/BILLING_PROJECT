@@ -154,6 +154,25 @@ model SystemEmailSettings {
   updatedAt DateTime @updatedAt
 }
 
+// Audit trail of Super Admin actions, for accountability across the
+// platform. Not tenant-scoped — sits outside the tenant-scoping extension
+// like User/Organization, since a single Super Admin action can span or
+// target any organization.
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId     String
+  actorEmail  String
+  action      String
+  targetType  String?
+  targetId    String?
+  targetLabel String?
+  details     String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
+}
+
 model Client {
   id             String       @id @default(cuid())
   organizationId String
