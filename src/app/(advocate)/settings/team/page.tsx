@@ -13,13 +13,15 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 
 export default async function TeamPage() {
@@ -85,25 +87,51 @@ export default async function TeamPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <form action={updatePermissions} className="space-y-3">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-                    {MODULES.map((module) => (
-                      <div key={module} className="space-y-1">
-                        <Label htmlFor={`${member.id}-${module}`} className="text-xs">
-                          {MODULE_LABELS[module]}
-                        </Label>
-                        <Select name={module} defaultValue={permissions[module]}>
-                          <SelectTrigger id={`${member.id}-${module}`} className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="NONE">No Access</SelectItem>
-                            <SelectItem value="VIEW">View</SelectItem>
-                            <SelectItem value="MANAGE">Manage</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ))}
-                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Module</TableHead>
+                        <TableHead className="text-center">View</TableHead>
+                        <TableHead className="text-center">Manage</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {MODULES.map((module) => {
+                        const level = permissions[module];
+                        const viewId = `${member.id}-${module}-view`;
+                        const manageId = `${member.id}-${module}-manage`;
+                        return (
+                          <TableRow key={module}>
+                            <TableCell className="text-sm">{MODULE_LABELS[module]}</TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                id={viewId}
+                                name={`${module}_view`}
+                                defaultChecked={level === "VIEW" || level === "MANAGE"}
+                              />
+                              <Label htmlFor={viewId} className="sr-only">
+                                {MODULE_LABELS[module]} — View
+                              </Label>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                id={manageId}
+                                name={`${module}_manage`}
+                                defaultChecked={level === "MANAGE"}
+                              />
+                              <Label htmlFor={manageId} className="sr-only">
+                                {MODULE_LABELS[module]} — Manage
+                              </Label>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                  <p className="text-xs text-muted-foreground">
+                    Manage includes View automatically — check Manage for full
+                    create/edit/delete access to that module, or just View for read-only.
+                  </p>
                   <Button type="submit" size="sm">
                     Save Permissions
                   </Button>

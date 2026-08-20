@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdvocate } from "@/lib/auth-guard";
 import { DEFAULT_PASSWORD } from "@/lib/default-password";
-import { MODULES, normalizePermissions } from "@/lib/permissions";
+import { MODULES, type PermissionLevel } from "@/lib/permissions";
 
 // User sits outside the tenant-scoping extension by design, so every
 // action here must explicitly verify the target belongs to the calling
@@ -58,11 +58,14 @@ export async function updateTeamMemberPermissions(userId: string, formData: Form
   const session = await requireAdvocate();
   await requireOwnStaffMember(userId, session.user.organizationId!);
 
-  const raw: Record<string, string> = {};
+  // Each module has two independent checkboxes; Manage implies View
+  // regardless of whether the View box was also checked.
+  const permissions: Partial<Record<(typeof MODULES)[number], PermissionLevel>> = {};
   for (const module of MODULES) {
-    raw[module] = String(formData.get(module) ?? "NONE");
+    const canManage = formData.get(`${module}_manage`) === "on";
+    const canView = formData.get(`${module}_view`) === "on";
+    permissions[module] = canManage ? "MANAGE" : canView ? "VIEW" : "NONE";
   }
-  const permissions = normalizePermissions(raw);
 
   await prisma.user.update({ where: { id: userId }, data: { permissions } });
   revalidatePath("/settings/team");
