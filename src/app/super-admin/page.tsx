@@ -35,9 +35,14 @@ export default async function SuperAdminDashboard() {
             Onboard firms and manage their subscription access.
           </p>
         </div>
-        <Button nativeButton={false} render={<Link href="/super-admin/organizations/new" />}>
-          Onboard New Admin
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" nativeButton={false} render={<Link href="/super-admin/settings" />}>
+            System Email Settings
+          </Button>
+          <Button nativeButton={false} render={<Link href="/super-admin/organizations/new" />}>
+            Onboard New Admin
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -57,6 +62,7 @@ export default async function SuperAdminDashboard() {
                   <TableHead>Profession</TableHead>
                   <TableHead>Admin Login</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Subscription</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="w-10" />
                 </TableRow>
@@ -64,7 +70,9 @@ export default async function SuperAdminDashboard() {
               <TableBody>
                 {organizations.map((org) => {
                   const admin = org.users[0];
-                  const actions: RowAction[] = [];
+                  const actions: RowAction[] = [
+                    { type: "link", label: "Manage", href: `/super-admin/organizations/${org.id}` },
+                  ];
                   if (admin) {
                     actions.push({
                       type: "action",
@@ -98,6 +106,11 @@ export default async function SuperAdminDashboard() {
                         <Badge variant={org.subscriptionStatus === "ACTIVE" ? "default" : "destructive"}>
                           {org.subscriptionStatus}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {org.subscriptionStartDate || org.subscriptionEndDate
+                          ? `${org.subscriptionStartDate?.toLocaleDateString() ?? "—"} – ${org.subscriptionEndDate?.toLocaleDateString() ?? "—"}`
+                          : "—"}
                       </TableCell>
                       <TableCell>{org.createdAt.toLocaleDateString()}</TableCell>
                       <TableCell>

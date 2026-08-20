@@ -66,12 +66,14 @@ enum ClientNoteType {
 }
 
 model Organization {
-  id                 String             @id @default(cuid())
-  name               String
-  profession         String?
-  subscriptionStatus SubscriptionStatus @default(ACTIVE)
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  id                    String             @id @default(cuid())
+  name                  String
+  profession            String?
+  subscriptionStatus    SubscriptionStatus @default(ACTIVE)
+  subscriptionStartDate DateTime?
+  subscriptionEndDate   DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 
   users         User[]
   clients       Client[]
@@ -127,6 +129,7 @@ model User {
   passwordHash       String
   name               String
   role               Role
+  isActive           Boolean       @default(true)
   mustChangePassword Boolean       @default(false)
   organizationId     String?
   organization       Organization? @relation(fields: [organizationId], references: [id])
@@ -136,6 +139,17 @@ model User {
   updatedAt          DateTime      @updatedAt
 
   @@index([organizationId])
+}
+
+model SystemEmailSettings {
+  id        String   @id @default(cuid())
+  smtpHost  String?
+  smtpPort  Int?
+  smtpUser  String?
+  smtpPass  String?
+  fromName  String?
+  fromEmail String?
+  updatedAt DateTime @updatedAt
 }
 
 model Client {

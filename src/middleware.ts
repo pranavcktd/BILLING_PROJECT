@@ -17,6 +17,7 @@ export default auth((req) => {
   const role = session?.user?.role;
 
   const isLoginPage = nextUrl.pathname === "/login";
+  const isForgotPasswordPage = nextUrl.pathname === "/forgot-password";
   const isPortalRoute = nextUrl.pathname.startsWith("/portal");
   const isSuperAdminRoute = nextUrl.pathname.startsWith("/super-admin");
   const isChangePasswordPage = nextUrl.pathname === "/change-password";
@@ -25,7 +26,12 @@ export default auth((req) => {
     !isSuperAdminRoute &&
     !isChangePasswordPage &&
     !isLoginPage &&
+    !isForgotPasswordPage &&
     nextUrl.pathname !== "/";
+
+  if (isForgotPasswordPage) {
+    return NextResponse.next();
+  }
 
   if (isLoginPage) {
     if (isLoggedIn) {

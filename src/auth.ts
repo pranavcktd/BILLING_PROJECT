@@ -28,6 +28,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
 
+        if (!user.isActive) {
+          throw new Error("This account has been deactivated. Contact your administrator.");
+        }
+
         if (user.organization?.subscriptionStatus === "SUSPENDED") {
           throw new Error("Your subscription is inactive. Contact support.");
         }

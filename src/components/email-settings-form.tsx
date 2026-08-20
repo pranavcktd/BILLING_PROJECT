@@ -2,7 +2,6 @@
 
 import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
-import { updateEmailSettings } from "@/lib/actions/settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,16 +17,23 @@ type EmailSettingsValues = {
 
 type SaveState = { ok: boolean; ts: number; error?: string } | null;
 
-async function saveAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
-  try {
-    await updateEmailSettings(formData);
-    return { ok: true, ts: Date.now() };
-  } catch (err) {
-    return { ok: false, ts: Date.now(), error: err instanceof Error ? err.message : "Failed to save." };
-  }
-}
-
-export function EmailSettingsForm({ settings }: { settings: EmailSettingsValues }) {
+export function EmailSettingsForm({
+  settings,
+  action,
+  description,
+}: {
+  settings: EmailSettingsValues;
+  action: (formData: FormData) => Promise<void>;
+  description?: string;
+}) {
+  const saveAction = async (_prev: SaveState, formData: FormData): Promise<SaveState> => {
+    try {
+      await action(formData);
+      return { ok: true, ts: Date.now() };
+    } catch (err) {
+      return { ok: false, ts: Date.now(), error: err instanceof Error ? err.message : "Failed to save." };
+    }
+  };
   const [state, formAction, pending] = useActionState<SaveState, FormData>(saveAction, null);
 
   useEffect(() => {
@@ -42,9 +48,8 @@ export function EmailSettingsForm({ settings }: { settings: EmailSettingsValues 
   return (
     <form action={formAction} className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Enter your outgoing (SMTP) mail server details so invoices can be emailed to
-        clients directly from this app. For Gmail, use an App Password rather than
-        your normal password.
+        {description ??
+          "Enter your outgoing (SMTP) mail server details so invoices can be emailed to clients directly from this app. For Gmail, use an App Password rather than your normal password."}
       </p>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">

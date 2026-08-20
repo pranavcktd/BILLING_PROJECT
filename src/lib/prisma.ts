@@ -14,6 +14,13 @@ if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prismaBase = prismaBase;
 }
 
+// Reserved for genuinely cross-tenant Super Admin code paths (e.g. usage
+// reporting across all organizations) — bypasses the tenant-scoping
+// extension entirely. Use sparingly, only for read-only reporting gated by
+// requireSuperAdmin(), and never to satisfy a normal advocate/client
+// request.
+export const prismaUnscoped = prismaBase;
+
 // Models that carry an `organizationId` column and must always be scoped to
 // the current request's tenant. Everything else (User, Organization, and
 // the item/junction tables that are never queried standalone) passes

@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireAdvocate } from "@/lib/auth-guard";
-import { setDefaultBankAccount, deleteBankAccount } from "@/lib/actions/settings";
+import {
+  setDefaultBankAccount,
+  deleteBankAccount,
+  updateEmailSettings,
+} from "@/lib/actions/settings";
 import { SettingsProfileForm } from "@/components/settings-profile-form";
 import { EmailSettingsForm } from "@/components/email-settings-form";
 import { Button } from "@/components/ui/button";
@@ -73,6 +77,7 @@ export default async function SettingsPage({
         </CardHeader>
         <CardContent>
           <EmailSettingsForm
+            action={updateEmailSettings}
             settings={{
               smtpHost: emailSettings?.smtpHost ?? null,
               smtpPort: emailSettings?.smtpPort ?? null,
