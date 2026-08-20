@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import {
   setDefaultBankAccount,
   deleteBankAccount,
@@ -29,7 +29,7 @@ export default async function SettingsPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireAdvocate();
+  const session = await requireModulePermission("settings", "VIEW");
   const { error } = await searchParams;
 
   const organizationId = await getCurrentOrgId();
@@ -157,43 +157,47 @@ export default async function SettingsPage({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Data Backup</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Download a full export of all your clients, matters, quotations,
-            contracts, invoices, payments, and settings. Login passwords and SMTP
-            passwords are not included in any export for security.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" nativeButton={false} render={<a href="/api/backup?format=json" />}>
-              Download JSON
-            </Button>
-            <Button variant="outline" nativeButton={false} render={<a href="/api/backup?format=xlsx" />}>
-              Download Excel
-            </Button>
-            <Button variant="outline" nativeButton={false} render={<a href="/api/backup?format=sql" />}>
-              Download SQL
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {session.user.role === "ADVOCATE" && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Data Backup</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Download a full export of all your clients, matters, quotations,
+                contracts, invoices, payments, and settings. Login passwords and SMTP
+                passwords are not included in any export for security.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" nativeButton={false} render={<a href="/api/backup?format=json" />}>
+                  Download JSON
+                </Button>
+                <Button variant="outline" nativeButton={false} render={<a href="/api/backup?format=xlsx" />}>
+                  Download Excel
+                </Button>
+                <Button variant="outline" nativeButton={false} render={<a href="/api/backup?format=sql" />}>
+                  Download SQL
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-      <Card className="border-destructive/30">
-        <CardHeader>
-          <CardTitle className="text-base text-destructive">Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Restoring replaces all of your current data with the contents of a JSON
-            backup file. This cannot be undone, though a safety backup of your
-            current data is always emailed to you first.
-          </p>
-          <RestoreConfirmDialog orgName={organization.name} action={restoreOrganizationData} />
-        </CardContent>
-      </Card>
+          <Card className="border-destructive/30">
+            <CardHeader>
+              <CardTitle className="text-base text-destructive">Danger Zone</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Restoring replaces all of your current data with the contents of a JSON
+                backup file. This cannot be undone, though a safety backup of your
+                current data is always emailed to you first.
+              </p>
+              <RestoreConfirmDialog orgName={organization.name} action={restoreOrganizationData} />
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

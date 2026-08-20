@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { createClientNote } from "@/lib/actions/client-notes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,7 @@ export default async function NewClientNotePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdvocate();
+  await requireModulePermission("clientNotes", "MANAGE");
   const { id } = await params;
 
   const client = await prisma.client.findUnique({

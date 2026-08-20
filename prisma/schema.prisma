@@ -14,6 +14,7 @@ enum Role {
   ADVOCATE
   CLIENT
   SUPER_ADMIN
+  STAFF
 }
 
 enum SubscriptionStatus {
@@ -131,6 +132,7 @@ model User {
   role               Role
   isActive           Boolean       @default(true)
   mustChangePassword Boolean       @default(false)
+  permissions        Json          @default("{}")
   organizationId     String?
   organization       Organization? @relation(fields: [organizationId], references: [id])
   clientId           String?       @unique

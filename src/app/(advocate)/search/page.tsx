@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireAdvocateOrStaff } from "@/lib/auth-guard";
 import { GlobalSearchBar } from "@/components/global-search-bar";
 import { displayInvoiceStatus, invoiceStatusLabel } from "@/lib/invoice-status";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  await requireAdvocate();
+  await requireAdvocateOrStaff();
   const { q } = await searchParams;
   const query = (q ?? "").trim();
 

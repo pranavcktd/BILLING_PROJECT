@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { displayInvoiceStatus, invoiceStatusLabel } from "@/lib/invoice-status";
 import { deleteInvoice, setInvoiceStatus } from "@/lib/actions/invoices";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
 };
 
 export default async function InvoicesPage() {
-  await requireAdvocate();
+  await requireModulePermission("invoices", "VIEW");
 
   const invoices = await prisma.invoice.findMany({
     orderBy: { issueDate: "desc" },

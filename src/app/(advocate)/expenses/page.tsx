@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { deleteExpense } from "@/lib/actions/expenses";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import { RowActionsMenu, type RowAction } from "@/components/row-actions-menu";
 import { ExportCsvButton } from "@/components/export-csv-button";
 
 export default async function ExpensesPage() {
-  await requireAdvocate();
+  await requireModulePermission("expenses", "VIEW");
 
   const expenses = await prisma.expense.findMany({
     orderBy: { date: "desc" },

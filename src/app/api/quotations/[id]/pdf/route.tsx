@@ -24,7 +24,7 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  await requireDocumentAccess(quotation.clientId);
+  await requireDocumentAccess(quotation.clientId, "quotations");
   const firm = await getFirmProfile();
 
   const buffer = await renderToBuffer(

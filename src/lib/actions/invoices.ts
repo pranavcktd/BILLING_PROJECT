@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { nextInvoiceNumber } from "@/lib/numbering";
 import { parseLineItems } from "@/lib/parse-line-items";
 import { generateInvoicePdfBuffer } from "@/lib/pdf/generate-invoice-pdf";
@@ -65,7 +65,7 @@ function computeGst(subtotal: number, meta: ReturnType<typeof readMeta>) {
 }
 
 export async function createInvoice(formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("invoices", "MANAGE");
   const meta = readMeta(formData);
   const { items, subtotal } = parseLineItems(formData);
   const bankSelection = readBankSelection(formData);
@@ -107,7 +107,7 @@ export async function createInvoice(formData: FormData) {
 }
 
 export async function updateInvoice(id: string, formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("invoices", "MANAGE");
   const meta = readMeta(formData);
   const { items, subtotal } = parseLineItems(formData);
   const bankSelection = readBankSelection(formData);
@@ -150,7 +150,7 @@ export async function updateInvoice(id: string, formData: FormData) {
 }
 
 export async function deleteInvoice(id: string) {
-  await requireAdvocate();
+  await requireModulePermission("invoices", "MANAGE");
   try {
     await prisma.invoice.delete({ where: { id } });
   } catch {
@@ -161,7 +161,7 @@ export async function deleteInvoice(id: string) {
 }
 
 export async function setInvoiceStatus(id: string, status: string) {
-  await requireAdvocate();
+  await requireModulePermission("invoices", "MANAGE");
   if (!INVOICE_STATUSES.includes(status as (typeof INVOICE_STATUSES)[number])) {
     throw new Error("Invalid status");
   }
@@ -182,7 +182,7 @@ export async function updateInvoiceStatusForm(id: string, formData: FormData) {
 }
 
 export async function sendInvoiceEmail(id: string) {
-  await requireAdvocate();
+  await requireModulePermission("invoices", "MANAGE");
 
   const mailer = await getMailer();
   if (!mailer) {

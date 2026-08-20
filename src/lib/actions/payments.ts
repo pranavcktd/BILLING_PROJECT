@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 
 const PAYMENT_METHODS = ["CASH", "UPI", "CHEQUE", "BANK_TRANSFER", "OTHER"] as const;
 
@@ -48,7 +48,7 @@ async function recomputeInvoice(invoiceId: string) {
 }
 
 export async function recordPayment(formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("payments", "MANAGE");
   const parsed = paymentSchema.parse({
     invoiceId: formData.get("invoiceId"),
     amount: formData.get("amount"),
@@ -86,7 +86,7 @@ export async function recordPayment(formData: FormData) {
 }
 
 export async function updatePayment(id: string, formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("payments", "MANAGE");
   const parsed = paymentSchema.omit({ invoiceId: true }).parse({
     amount: formData.get("amount"),
     method: formData.get("method"),
@@ -122,7 +122,7 @@ export async function updatePayment(id: string, formData: FormData) {
 }
 
 export async function deletePayment(id: string) {
-  await requireAdvocate();
+  await requireModulePermission("payments", "MANAGE");
   const payment = await prisma.payment.findUniqueOrThrow({ where: { id } });
   await prisma.payment.delete({ where: { id } });
   await recomputeInvoice(payment.invoiceId);

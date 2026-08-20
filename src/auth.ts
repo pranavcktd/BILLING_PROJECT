@@ -44,6 +44,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           clientId: user.clientId,
           organizationId: user.organizationId,
           mustChangePassword: user.mustChangePassword,
+          permissions: (user.permissions ?? {}) as Record<string, string>,
         };
       },
     }),

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { createContract } from "@/lib/actions/contracts";
 import { ContractForm } from "@/components/contract-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ export default async function NewContractPage({
 }: {
   searchParams: Promise<{ clientId?: string }>;
 }) {
-  await requireAdvocate();
+  await requireModulePermission("contracts", "MANAGE");
   const { clientId } = await searchParams;
 
   const [clients, matters] = await Promise.all([

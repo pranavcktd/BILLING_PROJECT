@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { updateInvoice } from "@/lib/actions/invoices";
 import { InvoiceForm } from "@/components/invoice-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ export default async function EditInvoicePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdvocate();
+  await requireModulePermission("invoices", "MANAGE");
   const { id } = await params;
 
   const [invoice, clients, matters, contracts, bankAccounts, serviceItems] = await Promise.all([

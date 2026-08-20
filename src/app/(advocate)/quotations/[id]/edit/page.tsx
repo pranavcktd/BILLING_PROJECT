@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { updateQuotation } from "@/lib/actions/quotations";
 import { QuotationForm } from "@/components/quotation-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ export default async function EditQuotationPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdvocate();
+  await requireModulePermission("quotations", "MANAGE");
   const { id } = await params;
 
   const [quotation, clients, matters, serviceItems] = await Promise.all([

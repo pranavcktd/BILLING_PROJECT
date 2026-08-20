@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { recordPayment } from "@/lib/actions/payments";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ export default async function NewPaymentPage({
 }: {
   searchParams: Promise<{ invoiceId?: string }>;
 }) {
-  await requireAdvocate();
+  await requireModulePermission("payments", "MANAGE");
   const { invoiceId } = await searchParams;
 
   if (!invoiceId) notFound();

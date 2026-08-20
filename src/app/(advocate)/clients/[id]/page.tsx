@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { deleteClient } from "@/lib/actions/clients";
 import { deleteMatter } from "@/lib/actions/matters";
 import { deleteQuotation, setQuotationStatus } from "@/lib/actions/quotations";
@@ -74,7 +74,7 @@ export default async function ClientDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string; tab?: string }>;
 }) {
-  await requireAdvocate();
+  await requireModulePermission("clients", "VIEW");
   const { id } = await params;
   const { error, tab } = await searchParams;
 

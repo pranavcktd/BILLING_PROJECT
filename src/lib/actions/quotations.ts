@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { nextQuotationNumber } from "@/lib/numbering";
 import { parseLineItems } from "@/lib/parse-line-items";
 
@@ -35,7 +35,7 @@ function readMeta(formData: FormData) {
 }
 
 export async function createQuotation(formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("quotations", "MANAGE");
   const meta = readMeta(formData);
   const { items, subtotal } = parseLineItems(formData);
 
@@ -69,7 +69,7 @@ export async function createQuotation(formData: FormData) {
 }
 
 export async function updateQuotation(id: string, formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("quotations", "MANAGE");
   const meta = readMeta(formData);
   const { items, subtotal } = parseLineItems(formData);
 
@@ -103,7 +103,7 @@ export async function updateQuotation(id: string, formData: FormData) {
 }
 
 export async function deleteQuotation(id: string) {
-  await requireAdvocate();
+  await requireModulePermission("quotations", "MANAGE");
   try {
     await prisma.quotation.delete({ where: { id } });
   } catch {
@@ -114,7 +114,7 @@ export async function deleteQuotation(id: string) {
 }
 
 export async function setQuotationStatus(id: string, status: string) {
-  await requireAdvocate();
+  await requireModulePermission("quotations", "MANAGE");
   if (!QUOTATION_STATUSES.includes(status as (typeof QUOTATION_STATUSES)[number])) {
     throw new Error("Invalid status");
   }
@@ -157,7 +157,7 @@ function buildContractContent(quotation: {
 }
 
 export async function convertQuotationToContract(quotationId: string) {
-  await requireAdvocate();
+  await requireModulePermission("quotations", "MANAGE");
   const quotation = await prisma.quotation.findUniqueOrThrow({
     where: { id: quotationId },
     include: { items: true },

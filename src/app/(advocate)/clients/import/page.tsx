@@ -1,10 +1,10 @@
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { bulkImportClients } from "@/lib/actions/clients";
 import { CsvImportForm } from "@/components/csv-import-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function ImportClientsPage() {
-  await requireAdvocate();
+  await requireModulePermission("clients", "MANAGE");
 
   return (
     <div className="mx-auto max-w-xl space-y-6">

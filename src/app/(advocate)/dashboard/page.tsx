@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireAdvocateOrStaff } from "@/lib/auth-guard";
 import { displayInvoiceStatus, invoiceStatusLabel } from "@/lib/invoice-status";
 import {
   getRevenueByYear,
@@ -30,7 +30,7 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
 };
 
 export default async function DashboardPage() {
-  await requireAdvocate();
+  await requireAdvocateOrStaff();
 
   const [
     invoices,

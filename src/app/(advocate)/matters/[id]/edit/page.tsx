@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { updateMatter } from "@/lib/actions/matters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,7 @@ export default async function EditMatterPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdvocate();
+  await requireModulePermission("clients", "MANAGE");
   const { id } = await params;
 
   const matter = await prisma.matter.findUnique({ where: { id } });

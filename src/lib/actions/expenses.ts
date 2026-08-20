@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 
 const expenseSchema = z.object({
   date: z.string().min(1, "Date is required"),
@@ -27,7 +27,7 @@ function readForm(formData: FormData) {
 }
 
 export async function createExpense(formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("expenses", "MANAGE");
   const parsed = readForm(formData);
   const amount = parseFloat(parsed.amount);
   if (!(amount > 0)) {
@@ -51,7 +51,7 @@ export async function createExpense(formData: FormData) {
 }
 
 export async function updateExpense(id: string, formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("expenses", "MANAGE");
   const parsed = readForm(formData);
   const amount = parseFloat(parsed.amount);
   if (!(amount > 0)) {
@@ -75,7 +75,7 @@ export async function updateExpense(id: string, formData: FormData) {
 }
 
 export async function deleteExpense(id: string) {
-  await requireAdvocate();
+  await requireModulePermission("expenses", "MANAGE");
   await prisma.expense.delete({ where: { id } });
   revalidatePath("/expenses");
 }

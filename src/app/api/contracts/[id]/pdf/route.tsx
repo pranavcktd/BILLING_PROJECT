@@ -20,7 +20,7 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  await requireDocumentAccess(contract.clientId);
+  await requireDocumentAccess(contract.clientId, "contracts");
   const firm = await getFirmProfile();
 
   const buffer = await renderToBuffer(

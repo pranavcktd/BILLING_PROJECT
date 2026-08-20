@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import {
   deleteQuotation,
   updateQuotationStatusForm,
@@ -38,7 +38,7 @@ export default async function QuotationDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireAdvocate();
+  await requireModulePermission("quotations", "VIEW");
   const { id } = await params;
   const { error } = await searchParams;
 

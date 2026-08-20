@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireAdvocate, requireModulePermission } from "@/lib/auth-guard";
 import { getCurrentOrgId } from "@/lib/tenant-context";
 import { getMailer } from "@/lib/mailer";
 import { parseBackupFile, performOrgRestore } from "@/lib/restore";
@@ -21,7 +21,7 @@ const firmProfileSchema = z.object({
 const MAX_SIGNATURE_BYTES = 500 * 1024;
 
 export async function updateFirmProfile(formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("settings", "MANAGE");
   const parsed = firmProfileSchema.parse({
     name: formData.get("name"),
     address: formData.get("address") || "",
@@ -84,7 +84,7 @@ const emailSettingsSchema = z.object({
 });
 
 export async function updateEmailSettings(formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("settings", "MANAGE");
   const parsed = emailSettingsSchema.parse({
     smtpHost: formData.get("smtpHost") || "",
     smtpPort: formData.get("smtpPort") || undefined,
@@ -134,7 +134,7 @@ const bankAccountSchema = z.object({
 });
 
 export async function createBankAccount(formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("settings", "MANAGE");
   const parsed = bankAccountSchema.parse({
     bankName: formData.get("bankName"),
     accountName: formData.get("accountName"),
@@ -170,7 +170,7 @@ export async function createBankAccount(formData: FormData) {
 }
 
 export async function updateBankAccount(id: string, formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("settings", "MANAGE");
   const parsed = bankAccountSchema.parse({
     bankName: formData.get("bankName"),
     accountName: formData.get("accountName"),
@@ -201,7 +201,7 @@ export async function updateBankAccount(id: string, formData: FormData) {
 }
 
 export async function setDefaultBankAccount(id: string) {
-  await requireAdvocate();
+  await requireModulePermission("settings", "MANAGE");
   await prisma.$transaction([
     prisma.bankAccount.updateMany({ data: { isDefault: false }, where: {} }),
     prisma.bankAccount.update({ where: { id }, data: { isDefault: true } }),
@@ -227,7 +227,7 @@ export async function restoreOrganizationData(formData: FormData) {
 }
 
 export async function deleteBankAccount(id: string) {
-  await requireAdvocate();
+  await requireModulePermission("settings", "MANAGE");
   const bank = await prisma.bankAccount.findUniqueOrThrow({ where: { id } });
 
   try {

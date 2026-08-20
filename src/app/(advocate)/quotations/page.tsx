@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { deleteQuotation, setQuotationStatus } from "@/lib/actions/quotations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
 };
 
 export default async function QuotationsPage() {
-  await requireAdvocate();
+  await requireModulePermission("quotations", "VIEW");
 
   const quotations = await prisma.quotation.findMany({
     orderBy: { issueDate: "desc" },

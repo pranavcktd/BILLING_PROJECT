@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { updateExpense } from "@/lib/actions/expenses";
 import { EXPENSE_CATEGORIES } from "@/lib/expense-categories";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ export default async function EditExpensePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdvocate();
+  await requireModulePermission("expenses", "MANAGE");
   const { id } = await params;
 
   const expense = await prisma.expense.findUnique({ where: { id } });

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 
 const matterSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -21,7 +21,7 @@ function readMatterForm(formData: FormData) {
 }
 
 export async function createMatter(clientId: string, formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("clients", "MANAGE");
   const parsed = readMatterForm(formData);
 
   const matter = await prisma.matter.create({
@@ -39,7 +39,7 @@ export async function createMatter(clientId: string, formData: FormData) {
 }
 
 export async function updateMatter(id: string, formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("clients", "MANAGE");
   const parsed = readMatterForm(formData);
 
   const matter = await prisma.matter.update({
@@ -57,7 +57,7 @@ export async function updateMatter(id: string, formData: FormData) {
 }
 
 export async function deleteMatter(id: string) {
-  await requireAdvocate();
+  await requireModulePermission("clients", "MANAGE");
   const matter = await prisma.matter.findUniqueOrThrow({ where: { id } });
 
   try {

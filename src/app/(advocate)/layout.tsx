@@ -12,7 +12,7 @@ export default async function AdvocateLayout({
 }) {
   const session = await auth();
 
-  if (!session?.user || session.user.role !== "ADVOCATE") {
+  if (!session?.user || (session.user.role !== "ADVOCATE" && session.user.role !== "STAFF")) {
     redirect("/login");
   }
 
@@ -28,7 +28,7 @@ export default async function AdvocateLayout({
           </span>
         </div>
         <div className="flex-1 overflow-y-auto px-3">
-          <AdvocateNav />
+          <AdvocateNav role={session.user.role} permissions={session.user.permissions} />
         </div>
         <div className="border-t border-sidebar-border px-3 py-4">
           <div className="flex items-center justify-between gap-2 px-2">

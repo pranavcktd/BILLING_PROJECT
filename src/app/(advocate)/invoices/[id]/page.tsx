@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { deleteInvoice, updateInvoiceStatusForm } from "@/lib/actions/invoices";
 import { INVOICE_STATUS_OPTIONS } from "@/lib/status-options";
 import { displayInvoiceStatus, invoiceStatusLabel } from "@/lib/invoice-status";
@@ -39,7 +39,7 @@ export default async function InvoiceDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireAdvocate();
+  await requireModulePermission("invoices", "VIEW");
   const { id } = await params;
   const { error } = await searchParams;
 

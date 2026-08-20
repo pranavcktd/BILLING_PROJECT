@@ -13,7 +13,7 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  await requireDocumentAccess(result.invoice.clientId);
+  await requireDocumentAccess(result.invoice.clientId, "invoices");
 
   return new NextResponse(new Uint8Array(result.buffer), {
     headers: {

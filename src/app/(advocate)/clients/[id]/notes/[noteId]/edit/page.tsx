@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { updateClientNote } from "@/lib/actions/client-notes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,7 @@ export default async function EditClientNotePage({
 }: {
   params: Promise<{ id: string; noteId: string }>;
 }) {
-  await requireAdvocate();
+  await requireModulePermission("clientNotes", "MANAGE");
   const { id, noteId } = await params;
 
   const [client, note] = await Promise.all([

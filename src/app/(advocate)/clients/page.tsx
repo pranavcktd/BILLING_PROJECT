@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { deleteClient } from "@/lib/actions/clients";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import { RowActionsMenu } from "@/components/row-actions-menu";
 import { ExportCsvButton } from "@/components/export-csv-button";
 
 export default async function ClientsPage() {
-  await requireAdvocate();
+  await requireModulePermission("clients", "VIEW");
 
   const clients = await prisma.client.findMany({
     orderBy: { name: "asc" },

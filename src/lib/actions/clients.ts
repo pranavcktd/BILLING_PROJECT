@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { parseCsv, csvRowsToObjects } from "@/lib/csv";
 
 const clientSchema = z.object({
@@ -30,7 +30,7 @@ function readClientForm(formData: FormData) {
 }
 
 export async function createClient(formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("clients", "MANAGE");
   const parsed = readClientForm(formData);
 
   const client = await prisma.client.create({
@@ -51,7 +51,7 @@ export async function createClient(formData: FormData) {
 }
 
 export async function updateClient(id: string, formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("clients", "MANAGE");
   const parsed = readClientForm(formData);
 
   await prisma.client.update({
@@ -73,7 +73,7 @@ export async function updateClient(id: string, formData: FormData) {
 }
 
 export async function deleteClient(id: string) {
-  await requireAdvocate();
+  await requireModulePermission("clients", "MANAGE");
   try {
     await prisma.client.delete({ where: { id } });
   } catch {
@@ -89,7 +89,7 @@ export type BulkImportResult = {
 };
 
 export async function bulkImportClients(formData: FormData): Promise<BulkImportResult> {
-  await requireAdvocate();
+  await requireModulePermission("clients", "MANAGE");
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     throw new Error("Choose a CSV file to import.");

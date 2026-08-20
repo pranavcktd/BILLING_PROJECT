@@ -1,4 +1,4 @@
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import {
   getRevenueByYear,
   getRevenueByMatter,
@@ -29,7 +29,7 @@ const AGING_LABELS: Record<string, string> = {
 };
 
 export default async function ReportsPage() {
-  await requireAdvocate();
+  await requireModulePermission("reports", "VIEW");
 
   const [revenueByYear, revenueByMatter, revenueByClient, paidUnpaid, aging, profitLoss] =
     await Promise.all([

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 
 const clientNoteSchema = z.object({
   type: z.enum(["CREDIT", "DEBIT", "NOTE"]),
@@ -25,7 +25,7 @@ function readClientNoteForm(formData: FormData) {
 }
 
 export async function createClientNote(clientId: string, formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("clientNotes", "MANAGE");
   const parsed = readClientNoteForm(formData);
 
   await prisma.clientNote.create({
@@ -45,7 +45,7 @@ export async function createClientNote(clientId: string, formData: FormData) {
 }
 
 export async function updateClientNote(id: string, formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("clientNotes", "MANAGE");
   const parsed = readClientNoteForm(formData);
   const note = await prisma.clientNote.findUniqueOrThrow({ where: { id } });
 
@@ -65,7 +65,7 @@ export async function updateClientNote(id: string, formData: FormData) {
 }
 
 export async function deleteClientNote(id: string) {
-  await requireAdvocate();
+  await requireModulePermission("clientNotes", "MANAGE");
   const note = await prisma.clientNote.findUniqueOrThrow({ where: { id } });
   await prisma.clientNote.delete({ where: { id } });
   revalidatePath(`/clients/${note.clientId}`);

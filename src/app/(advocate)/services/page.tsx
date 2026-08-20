@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { deleteService, toggleServiceActive } from "@/lib/actions/services";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,7 @@ import {
 import { RowActionsMenu, type RowAction } from "@/components/row-actions-menu";
 
 export default async function ServicesPage() {
-  await requireAdvocate();
+  await requireModulePermission("services", "VIEW");
 
   const services = await prisma.serviceItem.findMany({
     orderBy: { name: "asc" },

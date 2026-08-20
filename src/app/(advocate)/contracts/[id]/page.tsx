@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { deleteContract, updateContractStatusForm } from "@/lib/actions/contracts";
 import { CONTRACT_STATUS_OPTIONS } from "@/lib/status-options";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export default async function ContractDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireAdvocate();
+  await requireModulePermission("contracts", "VIEW");
   const { id } = await params;
   const { error } = await searchParams;
 

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { createBankAccount } from "@/lib/actions/settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ async function createAndRedirect(formData: FormData) {
 }
 
 export default async function NewBankAccountPage() {
-  await requireAdvocate();
+  await requireModulePermission("settings", "MANAGE");
 
   return (
     <div className="mx-auto max-w-lg space-y-6">

@@ -1,4 +1,4 @@
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { createClient } from "@/lib/actions/clients";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function NewClientPage() {
-  await requireAdvocate();
+  await requireModulePermission("clients", "MANAGE");
 
   return (
     <div className="mx-auto max-w-xl space-y-6">

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { createQuotation } from "@/lib/actions/quotations";
 import { QuotationForm } from "@/components/quotation-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ export default async function NewQuotationPage({
 }: {
   searchParams: Promise<{ clientId?: string }>;
 }) {
-  await requireAdvocate();
+  await requireModulePermission("quotations", "MANAGE");
   const { clientId } = await searchParams;
 
   const [clients, matters, serviceItems] = await Promise.all([

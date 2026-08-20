@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 
 const CONTRACT_STATUSES = ["DRAFT", "SENT", "SIGNED", "CANCELLED"] as const;
 
@@ -25,7 +25,7 @@ function readMeta(formData: FormData) {
 }
 
 export async function createContract(formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("contracts", "MANAGE");
   const meta = readMeta(formData);
 
   const contract = await prisma.contract.create({
@@ -44,7 +44,7 @@ export async function createContract(formData: FormData) {
 }
 
 export async function updateContract(id: string, formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("contracts", "MANAGE");
   const meta = readMeta(formData);
 
   await prisma.contract.update({
@@ -63,7 +63,7 @@ export async function updateContract(id: string, formData: FormData) {
 }
 
 export async function deleteContract(id: string) {
-  await requireAdvocate();
+  await requireModulePermission("contracts", "MANAGE");
   try {
     await prisma.contract.delete({ where: { id } });
   } catch {
@@ -74,7 +74,7 @@ export async function deleteContract(id: string) {
 }
 
 export async function setContractStatus(id: string, status: string) {
-  await requireAdvocate();
+  await requireModulePermission("contracts", "MANAGE");
   if (!CONTRACT_STATUSES.includes(status as (typeof CONTRACT_STATUSES)[number])) {
     throw new Error("Invalid status");
   }

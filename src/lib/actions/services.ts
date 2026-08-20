@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { parseCsv, csvRowsToObjects } from "@/lib/csv";
 import type { BulkImportResult } from "@/lib/actions/clients";
 
@@ -25,7 +25,7 @@ function readForm(formData: FormData) {
 }
 
 export async function createService(formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("services", "MANAGE");
   const parsed = readForm(formData);
   const rate = parseFloat(parsed.rate);
   if (!(rate >= 0)) {
@@ -47,7 +47,7 @@ export async function createService(formData: FormData) {
 }
 
 export async function updateService(id: string, formData: FormData) {
-  await requireAdvocate();
+  await requireModulePermission("services", "MANAGE");
   const parsed = readForm(formData);
   const rate = parseFloat(parsed.rate);
   if (!(rate >= 0)) {
@@ -69,13 +69,13 @@ export async function updateService(id: string, formData: FormData) {
 }
 
 export async function deleteService(id: string) {
-  await requireAdvocate();
+  await requireModulePermission("services", "MANAGE");
   await prisma.serviceItem.delete({ where: { id } });
   revalidatePath("/services");
 }
 
 export async function toggleServiceActive(id: string) {
-  await requireAdvocate();
+  await requireModulePermission("services", "MANAGE");
   const service = await prisma.serviceItem.findUniqueOrThrow({ where: { id } });
   await prisma.serviceItem.update({
     where: { id },
@@ -85,7 +85,7 @@ export async function toggleServiceActive(id: string) {
 }
 
 export async function bulkImportServices(formData: FormData): Promise<BulkImportResult> {
-  await requireAdvocate();
+  await requireModulePermission("services", "MANAGE");
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     throw new Error("Choose a CSV file to import.");

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { deleteContract, setContractStatus } from "@/lib/actions/contracts";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,7 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
 };
 
 export default async function ContractsPage() {
-  await requireAdvocate();
+  await requireModulePermission("contracts", "VIEW");
 
   const contracts = await prisma.contract.findMany({
     orderBy: { createdAt: "desc" },

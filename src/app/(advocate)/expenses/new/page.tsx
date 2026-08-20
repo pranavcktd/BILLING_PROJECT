@@ -1,4 +1,4 @@
-import { requireAdvocate } from "@/lib/auth-guard";
+import { requireModulePermission } from "@/lib/auth-guard";
 import { createExpense } from "@/lib/actions/expenses";
 import { EXPENSE_CATEGORIES } from "@/lib/expense-categories";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function NewExpensePage() {
-  await requireAdvocate();
+  await requireModulePermission("expenses", "MANAGE");
   const today = new Date().toISOString().slice(0, 10);
 
   return (
