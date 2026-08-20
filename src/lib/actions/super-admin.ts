@@ -7,6 +7,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/auth-guard";
 import { DEFAULT_PASSWORD } from "@/lib/default-password";
+import { getSystemMailer } from "@/lib/mailer";
+import { parseBackupFile, performOrgRestore } from "@/lib/restore";
 
 const onboardSchema = z.object({
   organizationName: z.string().min(1, "Organization name is required"),
@@ -150,6 +152,28 @@ export async function deleteUser(userId: string) {
   const user = await prisma.user.delete({ where: { id: userId } });
   revalidatePath("/super-admin");
   if (user.organizationId) revalidatePath(`/super-admin/organizations/${user.organizationId}`);
+}
+
+export async function restoreOrganizationDataAsSuperAdmin(organizationId: string, formData: FormData) {
+  const session = await requireSuperAdmin();
+  const org = await prisma.organization.findUnique({ where: { id: organizationId } });
+  if (!org) {
+    throw new Error("Organization not found.");
+  }
+
+  const file = formData.get("backupFile");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("Choose a backup JSON file to restore from.");
+  }
+
+  const raw = await file.text();
+  const backup = parseBackupFile(raw);
+  const mailer = await getSystemMailer();
+
+  await performOrgRestore(organizationId, backup, mailer, session.user.email!);
+
+  revalidatePath("/super-admin");
+  revalidatePath(`/super-admin/organizations/${organizationId}`);
 }
 
 const systemEmailSettingsSchema = z.object({

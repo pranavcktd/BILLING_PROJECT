@@ -8,6 +8,7 @@ import {
   deleteUser,
   resetAdminPassword,
   setOrganizationSubscriptionStatus,
+  restoreOrganizationDataAsSuperAdmin,
 } from "@/lib/actions/super-admin";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { RestoreConfirmDialog } from "@/components/restore-confirm-dialog";
 
 function toDateInputValue(d: Date | null) {
   return d ? d.toISOString().slice(0, 10) : "";
@@ -67,6 +69,7 @@ export default async function OrganizationDetailPage({
 
   const updateDetails = updateOrganizationDetails.bind(null, organization.id);
   const updateAdmin = admin ? updateAdminUser.bind(null, admin.id) : null;
+  const restoreThisOrg = restoreOrganizationDataAsSuperAdmin.bind(null, organization.id);
 
   return (
     <div className="space-y-6">
@@ -259,6 +262,49 @@ export default async function OrganizationDetailPage({
           <p className="mt-4 text-sm text-muted-foreground">
             Total records: <span className="font-medium text-foreground">{totalRows}</span>
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Data Backup</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<a href={`/api/super-admin/backup?orgId=${organization.id}&format=json`} />}
+          >
+            Download JSON
+          </Button>
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<a href={`/api/super-admin/backup?orgId=${organization.id}&format=xlsx`} />}
+          >
+            Download Excel
+          </Button>
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<a href={`/api/super-admin/backup?orgId=${organization.id}&format=sql`} />}
+          >
+            Download SQL
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/30">
+        <CardHeader>
+          <CardTitle className="text-base text-destructive">Danger Zone</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Restoring replaces all of this organization&apos;s current data with the
+            contents of a JSON backup file. This cannot be undone, though a safety
+            backup of the current data is always emailed to you first.
+          </p>
+          <RestoreConfirmDialog orgName={organization.name} action={restoreThisOrg} />
         </CardContent>
       </Card>
     </div>

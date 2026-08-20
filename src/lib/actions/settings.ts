@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdvocate } from "@/lib/auth-guard";
 import { getCurrentOrgId } from "@/lib/tenant-context";
+import { getMailer } from "@/lib/mailer";
+import { parseBackupFile, performOrgRestore } from "@/lib/restore";
 
 const firmProfileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -205,6 +207,23 @@ export async function setDefaultBankAccount(id: string) {
     prisma.bankAccount.update({ where: { id }, data: { isDefault: true } }),
   ]);
   revalidatePath("/settings");
+}
+
+export async function restoreOrganizationData(formData: FormData) {
+  const session = await requireAdvocate();
+  const file = formData.get("backupFile");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("Choose a backup JSON file to restore from.");
+  }
+
+  const raw = await file.text();
+  const backup = parseBackupFile(raw);
+  const organizationId = await getCurrentOrgId();
+  const mailer = await getMailer();
+
+  await performOrgRestore(organizationId, backup, mailer, session.user.email!);
+
+  revalidatePath("/", "layout");
 }
 
 export async function deleteBankAccount(id: string) {

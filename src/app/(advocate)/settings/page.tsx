@@ -5,9 +5,11 @@ import {
   setDefaultBankAccount,
   deleteBankAccount,
   updateEmailSettings,
+  restoreOrganizationData,
 } from "@/lib/actions/settings";
 import { SettingsProfileForm } from "@/components/settings-profile-form";
 import { EmailSettingsForm } from "@/components/email-settings-form";
+import { RestoreConfirmDialog } from "@/components/restore-confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,10 +33,11 @@ export default async function SettingsPage({
   const { error } = await searchParams;
 
   const organizationId = await getCurrentOrgId();
-  const [firmProfile, bankAccounts, emailSettings] = await Promise.all([
+  const [firmProfile, bankAccounts, emailSettings, organization] = await Promise.all([
     prisma.firmProfile.findUnique({ where: { organizationId } }),
     prisma.bankAccount.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.emailSettings.findUnique({ where: { organizationId } }),
+    prisma.organization.findUniqueOrThrow({ where: { id: organizationId } }),
   ]);
 
   return (
@@ -160,17 +163,35 @@ export default async function SettingsPage({
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Download a full JSON export of all your clients, matters, quotations,
-            contracts, invoices, payments, and settings. Login passwords are not
-            included in the export for security.
+            Download a full export of all your clients, matters, quotations,
+            contracts, invoices, payments, and settings. Login passwords and SMTP
+            passwords are not included in any export for security.
           </p>
-          <Button
-            variant="outline"
-            nativeButton={false}
-            render={<a href="/api/backup" />}
-          >
-            Download Backup
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" nativeButton={false} render={<a href="/api/backup?format=json" />}>
+              Download JSON
+            </Button>
+            <Button variant="outline" nativeButton={false} render={<a href="/api/backup?format=xlsx" />}>
+              Download Excel
+            </Button>
+            <Button variant="outline" nativeButton={false} render={<a href="/api/backup?format=sql" />}>
+              Download SQL
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/30">
+        <CardHeader>
+          <CardTitle className="text-base text-destructive">Danger Zone</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Restoring replaces all of your current data with the contents of a JSON
+            backup file. This cannot be undone, though a safety backup of your
+            current data is always emailed to you first.
+          </p>
+          <RestoreConfirmDialog orgName={organization.name} action={restoreOrganizationData} />
         </CardContent>
       </Card>
     </div>

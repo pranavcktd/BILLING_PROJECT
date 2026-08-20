@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdvocate } from "@/lib/auth-guard";
-import { getCurrentOrgId } from "@/lib/tenant-context";
+import { requireSuperAdmin } from "@/lib/auth-guard";
+import { prismaUnscoped } from "@/lib/prisma";
 import { getOrgBackupData, serializeBackupJson, backupFilename } from "@/lib/backup";
 import { buildBackupWorkbook } from "@/lib/backup-xlsx";
 import { buildBackupSql } from "@/lib/backup-sql";
 
 export async function GET(request: NextRequest) {
-  await requireAdvocate();
-  const organizationId = await getCurrentOrgId();
+  await requireSuperAdmin();
+  const organizationId = request.nextUrl.searchParams.get("orgId");
   const format = request.nextUrl.searchParams.get("format") ?? "json";
+
+  if (!organizationId) {
+    return NextResponse.json({ error: "Missing orgId" }, { status: 400 });
+  }
+  const org = await prismaUnscoped.organization.findUnique({ where: { id: organizationId } });
+  if (!org) {
+    return NextResponse.json({ error: "Organization not found" }, { status: 404 });
+  }
 
   const data = await getOrgBackupData(organizationId);
 
